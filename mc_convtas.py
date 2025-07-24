@@ -350,15 +350,21 @@ class MCTasNet(nn.Module):
                 dim=1
             )
         elif self.in_ch == 2:
-            pass
+            pair1 = torch.cat((s_in[:, :, 0, :].unsqueeze(2), s_in[:, :, 1, :].unsqueeze(2)), dim=2)
+            spa_out = self.conv(pair1)  # B, 30, N, L
         else:
             raise NotImplementedError
         
         B, C, N, L = spa_out.shape
         spa_out = spa_out.view(B, C * N, L)
-        
 
-        spa_spec = self.TCN(torch.cat((enc_output, spa_out), dim=1)).view(batch_size, self.num_spk, self.enc_dim, -1) # B, E+C*N, L
+        logger.info(spa_out.shape)
+        logger.info(enc_output.shape)
+        _spa_spec = torch.cat((enc_output, spa_out), dim=1)
+        logger.info(_spa_spec.shape)
+
+        spa_spec = self.TCN(_spa_spec)
+        spa_spec = spa_spec.view(batch_size, self.num_spk, self.enc_dim, -1) # B, E+C*N, L
                                    
         # generate masks
         masks = torch.sigmoid(spa_spec).view(batch_size, self.num_spk, self.enc_dim, -1)  # B, C, N, L
@@ -373,7 +379,7 @@ class MCTasNet(nn.Module):
 
 def test_conv_tasnet():
     x = torch.rand(2, 32000)
-    nnet = MCTasNet()
+    nnet = MCTasNet(in_ch=6)
     x = nnet(x)
     logger.info(x.shape) 
     # torch.Size([2, 1, 32000])
