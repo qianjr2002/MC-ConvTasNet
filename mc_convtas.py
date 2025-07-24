@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+import numpy as np
 
 
 class cLN(nn.Module):
@@ -296,6 +297,13 @@ class MCTasNet(nn.Module):
         
         if input.dim() == 2:
             input = input.unsqueeze(1)
+        
+        # Ensure input has self.in_ch channels by repeating if needed
+        # Expand single-channel input to multi-channel input
+        # torch.Size([2, 1, 32000]) ==> torch.Size([2, 6, 32000])
+        if input.size(1) == 1 and self.in_ch > 1:
+            input = input.repeat(1, self.in_ch, 1)
+        
         batch_size = input.size(0)
         nsample = input.size(2)
         rest = self.win - (self.stride + nsample % self.win) % self.win
@@ -348,8 +356,8 @@ def test_conv_tasnet():
     x = torch.rand(2, 32000)
     nnet = MCTasNet()
     x = nnet(x)
-    s1 = x[0]
-    print(s1.shape)
+    print(x.shape) 
+    # torch.Size([2, 1, 32000])
 
 
 if __name__ == "__main__":
