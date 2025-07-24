@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
+from loguru import logger
 
 
 class cLN(nn.Module):
@@ -328,13 +329,26 @@ class MCTasNet(nn.Module):
 
         #2d spatial conv
         s_in = output.unsqueeze(1)
-        pair1 = torch.cat((s_in[:, :, 3, :].unsqueeze(2),s_in[:, :, 0, :].unsqueeze(2)),dim=2)
-        pair2 = torch.cat((s_in[:, :, 1, :].unsqueeze(2),s_in[:, :, 4, :].unsqueeze(2)),dim=2)
-        pair3 = torch.cat((s_in[:, :, 2, :].unsqueeze(2),s_in[:, :, 5, :].unsqueeze(2)),dim=2)
-        pair4 = torch.cat((s_in[:, :, 0, :].unsqueeze(2),s_in[:, :, 1, :].unsqueeze(2)),dim=2)
-        pair5 = torch.cat((s_in[:, :, 2, :].unsqueeze(2),s_in[:, :, 3, :].unsqueeze(2)),dim=2)
-        pair6 = torch.cat((s_in[:, :, 4, :].unsqueeze(2),s_in[:, :, 5, :].unsqueeze(2)),dim=2)
-        spa_out = torch.cat((self.conv(pair1), self.conv(pair2), self.conv(pair3), self.conv(pair4), self.conv(pair5), self.conv(pair6)), dim=1) # B, 180, N, L
+        logger.info(s_in.shape)
+        logger.info(self.in_ch)
+        if self.in_ch == 6:
+            pair1 = torch.cat((s_in[:, :, 3, :].unsqueeze(2),s_in[:, :, 0, :].unsqueeze(2)),dim=2)
+            pair2 = torch.cat((s_in[:, :, 1, :].unsqueeze(2),s_in[:, :, 4, :].unsqueeze(2)),dim=2)
+            pair3 = torch.cat((s_in[:, :, 2, :].unsqueeze(2),s_in[:, :, 5, :].unsqueeze(2)),dim=2)
+            pair4 = torch.cat((s_in[:, :, 0, :].unsqueeze(2),s_in[:, :, 1, :].unsqueeze(2)),dim=2)
+            pair5 = torch.cat((s_in[:, :, 2, :].unsqueeze(2),s_in[:, :, 3, :].unsqueeze(2)),dim=2)
+            pair6 = torch.cat((s_in[:, :, 4, :].unsqueeze(2),s_in[:, :, 5, :].unsqueeze(2)),dim=2)
+            spa_out = torch.cat(
+                (
+                    self.conv(pair1),
+                    self.conv(pair2),
+                    self.conv(pair3),
+                    self.conv(pair4),
+                    self.conv(pair5),
+                    self.conv(pair6)
+                ),
+                dim=1
+            )
         B, C, N, L = spa_out.shape
         spa_out = spa_out.view(B, C * N, L)
         
@@ -356,7 +370,7 @@ def test_conv_tasnet():
     x = torch.rand(2, 32000)
     nnet = MCTasNet()
     x = nnet(x)
-    print(x.shape) 
+    logger.info(x.shape) 
     # torch.Size([2, 1, 32000])
 
 
