@@ -387,6 +387,16 @@ def test_conv_tasnet():
     logger.info(x.shape)
     # torch.Size([16, 1, 32000])
 
+def test_model_complexity_info():
+    from ptflops import get_model_complexity_info
+    nnet = MCTasNet(in_ch=2)
+    flops, params = get_model_complexity_info(nnet,
+                                              (1, 16000),
+                                              as_strings=True,
+                                              print_per_layer_stat=False)
+    logger.info(f'flops:{flops}, params:{params}')
+    # flops:10.22 GMac, params:5.0 M
 
 if __name__ == "__main__":
     test_conv_tasnet()
+    test_model_complexity_info()
