@@ -281,8 +281,11 @@ class MCTasNet(nn.Module):
         )
         
         # TCN separator
-        self.TCN = TCN(self.enc_dim+180, self.enc_dim*self.num_spk, self.feature_dim, self.feature_dim*4,
-                              self.layer, self.stack, self.kernel, causal=self.causal)
+        tcn_input_dim = enc_dim + (30 if in_ch == 2 else 180)
+        self.TCN = TCN(tcn_input_dim, enc_dim*num_spk, feature_dim, feature_dim*4,
+                      layer, stack, kernel, causal=causal)
+        # self.TCN = TCN(self.enc_dim+180, self.enc_dim*self.num_spk, self.feature_dim, self.feature_dim*4,
+        #                       self.layer, self.stack, self.kernel, causal=self.causal)
 
         self.receptive_field = self.TCN.receptive_field
         
@@ -378,11 +381,11 @@ class MCTasNet(nn.Module):
         return output
 
 def test_conv_tasnet():
-    x = torch.rand(2, 32000)
-    nnet = MCTasNet(in_ch=6)
+    x = torch.rand(16, 2, 32000) # B C T
+    nnet = MCTasNet(in_ch=2)
     x = nnet(x)
-    logger.info(x.shape) 
-    # torch.Size([2, 1, 32000])
+    logger.info(x.shape)
+    # torch.Size([16, 1, 32000])
 
 
 if __name__ == "__main__":
