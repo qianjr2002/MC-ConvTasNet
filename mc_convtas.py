@@ -349,6 +349,11 @@ class MCTasNet(nn.Module):
                 ),
                 dim=1
             )
+        elif self.in_ch == 2:
+            pass
+        else:
+            raise NotImplementedError
+        
         B, C, N, L = spa_out.shape
         spa_out = spa_out.view(B, C * N, L)
         
