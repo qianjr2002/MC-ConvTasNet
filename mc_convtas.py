@@ -5,6 +5,10 @@ from torch.autograd import Variable
 import numpy as np
 from loguru import logger
 
+import sys
+logger.remove()
+logger.add(sys.stderr, level="INFO")  # Only show INFO
+
 
 class cLN(nn.Module):
     def __init__(self, dimension, eps = 1e-8, trainable=True):
@@ -332,8 +336,8 @@ class MCTasNet(nn.Module):
 
         #2d spatial conv
         s_in = output.unsqueeze(1)
-        logger.info(s_in.shape)
-        logger.info(self.in_ch)
+        logger.debug(s_in.shape)
+        logger.debug(self.in_ch)
         if self.in_ch == 6:
             pair1 = torch.cat((s_in[:, :, 3, :].unsqueeze(2),s_in[:, :, 0, :].unsqueeze(2)),dim=2)
             pair2 = torch.cat((s_in[:, :, 1, :].unsqueeze(2),s_in[:, :, 4, :].unsqueeze(2)),dim=2)
@@ -361,10 +365,10 @@ class MCTasNet(nn.Module):
         B, C, N, L = spa_out.shape
         spa_out = spa_out.view(B, C * N, L)
 
-        logger.info(spa_out.shape)
-        logger.info(enc_output.shape)
+        logger.debug(spa_out.shape)
+        logger.debug(enc_output.shape)
         _spa_spec = torch.cat((enc_output, spa_out), dim=1)
-        logger.info(_spa_spec.shape)
+        logger.debug(_spa_spec.shape)
 
         spa_spec = self.TCN(_spa_spec)
         spa_spec = spa_spec.view(batch_size, self.num_spk, self.enc_dim, -1) # B, E+C*N, L
@@ -381,22 +385,24 @@ class MCTasNet(nn.Module):
         return output
 
 def test_conv_tasnet():
-    x = torch.rand(16, 2, 32000) # B C T
-    nnet = MCTasNet(in_ch=2)
+    x = torch.rand(BATCH_SIZE, NUM_CHANNELS, SEQ_LENGTH) # B C T
+    nnet = MCTasNet(in_ch=NUM_CHANNELS)
     x = nnet(x)
     logger.info(x.shape)
-    # torch.Size([16, 1, 32000])
+    # torch.Size([16, 1, 16000])
 
 def test_model_complexity_info():
     from ptflops import get_model_complexity_info
     nnet = MCTasNet(in_ch=2)
     flops, params = get_model_complexity_info(nnet,
-                                              (1, 16000),
+                                              (SINGLE_CHANNEL, AUDIO_SAMPLE_RATE),
                                               as_strings=True,
                                               print_per_layer_stat=False)
     logger.info(f'flops:{flops}, params:{params}')
     # flops:10.22 GMac, params:5.0 M
 
 if __name__ == "__main__":
+    BATCH_SIZE, NUM_CHANNELS, SEQ_LENGTH = 16, 2, 16000
+    SINGLE_CHANNEL, AUDIO_SAMPLE_RATE = 1, 16000
     test_conv_tasnet()
     test_model_complexity_info()
